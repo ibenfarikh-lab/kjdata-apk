@@ -1,0 +1,33 @@
+name: Publish APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_url:
+        description: "URL unduh artifact zip (bertanda tangan, berlaku singkat)"
+        required: true
+      tag:
+        description: "Tag rilis tujuan"
+        required: true
+        default: "v0.1.16+17"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unduh dan ekstrak artifact
+        run: |
+          curl -L -o artifact.zip "${{ inputs.artifact_url }}"
+          unzip -o artifact.zip -d extracted
+          ls -la extracted
+          APK=$(ls extracted/*.apk | head -1)
+          cp "$APK" kjdata.apk
+          sha256sum kjdata.apk
+      - name: Unggah kjdata.apk ke rilis
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ inputs.tag }}" kjdata.apk --repo "$GITHUB_REPOSITORY" --clobber
